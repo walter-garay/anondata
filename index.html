@@ -24,6 +24,36 @@
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:title" content="AnonData | Anónimización de Datos Sensibles" />
     <meta property="twitter:description" content="Enmascara correos, contraseñas, tokens y logs directamente en tu navegador de forma segura." />
+
+    <!-- JSON-LD Structured Data for Search Engines & AI Bots -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "AnonData",
+        "url": "https://walter-garay.github.io/anondata/",
+        "description": "Herramienta local-first de código abierto para anónimizar logs y enmascarar información personal identificable (PII) de manera 100% segura en el navegador.",
+        "applicationCategory": "SecurityApplication",
+        "operatingSystem": "All",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "featureList": [
+          "Detección y enmascaramiento de claves API y secretos",
+          "Redacción de direcciones de correo electrónico",
+          "Enmascaramiento criptográfico de IPs (SHA-256)",
+          "Simulación coherente de datos ficticios (nombres, teléfonos, etc.)",
+          "Procesamiento local cliente-servidor con 0% de transferencia externa"
+        ],
+        "author": {
+          "@type": "Person",
+          "name": "Walter Garay"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
