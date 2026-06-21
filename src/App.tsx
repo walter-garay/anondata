@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ShieldCheck, Heart, Lock, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ShieldCheck, Heart, Lock, ArrowLeft, ArrowRight, RefreshCw, Sun, Moon } from 'lucide-react';
 import { UploadBox } from './components/UploadBox';
 import { RulesPanel } from './components/RulesPanel';
 import { DiffViewer } from './components/DiffViewer';
@@ -8,6 +8,30 @@ import { type PIICategory, scanRawText, isSecretKey, PII_RULES } from './utils/d
 import { anonymizeFile } from './utils/masker';
 
 export default function App() {
+  // Wizard steps: 1 = Intake / Upload, 2 = Configure Rules, 3 = Verify & Export
+  const [step, setStep] = useState<number>(1);
+
+  // Theme support: 'dark' or 'light'
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('anon-theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  });
+
+  // Apply theme to document element
+  useEffect(() => {
+    if (theme === 'light') {
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+    localStorage.setItem('anon-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+
   // File state
   const [fileName, setFileName] = useState<string>('');
   const [fileContent, setFileContent] = useState<string>('');
@@ -107,6 +131,9 @@ export default function App() {
       defaultRules[r.id] = r.defaultAction;
     });
     setRules(defaultRules);
+
+    // Automatically transition to configure step
+    setStep(2);
   };
 
   const handleChangeRule = (category: PIICategory, action: 'redact' | 'hash' | 'fake' | 'keep') => {
@@ -165,6 +192,7 @@ export default function App() {
       password: 0
     });
     setCopySuccess(false);
+    setStep(1);
   };
 
   const totalDetections = Object.values(counts).reduce((a, b) => a + b, 0);
@@ -172,51 +200,126 @@ export default function App() {
   return (
     <div className="app-container">
       {/* App Header */}
-      <header className="glass-panel app-header">
+      <header className="app-header">
         <div className="brand">
-          <ShieldCheck size={28} className="brand-logo" />
+          <ShieldCheck size={26} className="brand-logo" />
           <h1 className="brand-title">AnonData</h1>
-          <span className="brand-badge">v1.0 Local-First</span>
+          <span className="brand-badge">Local-First</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          <Lock size={14} className="text-success" />
-          <span>Procesamiento 100% en Navegador</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'none', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--text-dim)' }}>
+            <Lock size={12} style={{ color: 'var(--color-success)' }} />
+            <span>Procesamiento local</span>
+          </div>
+          {/* Theme Toggle Button */}
+          <button 
+            type="button" 
+            className="theme-toggle-btn" 
+            onClick={toggleTheme} 
+            title={theme === 'light' ? 'Activar modo oscuro' : 'Activar modo claro'}
+            aria-label="Cambiar tema de color"
+          >
+            {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+          </button>
         </div>
       </header>
 
+      {/* Wizard Step Progress Tracker */}
+      <div className="wizard-progress">
+        <div className={`wizard-step ${step > 1 ? 'completed' : ''} ${step === 1 ? 'active' : ''}`}>
+          <span className="step-number">{step > 1 ? '✓' : '1'}</span>
+          <span className="step-label">Carga</span>
+        </div>
+        <div className="wizard-step-arrow">→</div>
+        <div className={`wizard-step ${step > 2 ? 'completed' : ''} ${step === 2 ? 'active' : ''}`}>
+          <span className="step-number">{step > 2 ? '✓' : '2'}</span>
+          <span className="step-label">Reglas</span>
+        </div>
+        <div className="wizard-step-arrow">→</div>
+        <div className={`wizard-step ${step === 3 ? 'active' : ''}`}>
+          <span className="step-number">3</span>
+          <span className="step-label">Exportar</span>
+        </div>
+      </div>
+
       {/* Main Content Area */}
-      <main style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
-        {!fileContent ? (
-          <>
-            <div className="glass-panel" style={{ padding: '2.5rem 1.5rem', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '0.75rem', alignItems: 'center' }}>
-              <h2 style={{ fontSize: '1.75rem', fontWeight: 600 }}>Anónimiza logs y datos estructurados al instante</h2>
-              <p style={{ color: 'var(--text-muted)', maxWidth: '600px', fontSize: '0.95rem', lineHeight: 1.5 }}>
-                Detecta y enmascara automáticamente información sensible (PII) antes de compartirla con IAs, subirla a servicios de soporte o guardarla en entornos inseguros.
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+        
+        {step === 1 && (
+          <div className="step-container landing-grid">
+            {/* Left Column: Hero & Demonstration */}
+            <div className="landing-hero">
+              <h2 className="landing-title">Anónimiza logs y datos estructurados al instante</h2>
+              <p className="landing-subtitle">
+                Detecta y enmascara automáticamente información personal identificable (PII) antes de compartirla con IAs o subirla a soporte técnico.
               </p>
+
+              {/* Dynamic / Static Visual Demo */}
+              <div className="visual-demo-card">
+                <div className="visual-demo-header">
+                  <span>Demostración de Enmascarado</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--color-success)' }}>
+                    <Lock size={12} />
+                    <span>Local</span>
+                  </div>
+                </div>
+                <div className="visual-demo-body">
+                  {`{
+  "user": "Marcus Aurelius",
+  "email": `}<span className="demo-original">"marcus@rome.com"</span>{`,
+  "client_ip": `}<span className="demo-original">"198.51.100.75"</span>{`,
+  "api_key": `}<span className="demo-original">"sk_live_51NzAbC"</span>{`
+}`}
+                  <div style={{ margin: '0.6rem 0', borderTop: '1px dashed var(--border-subtle)' }} />
+                  {`{
+  "user": "Marcus Aurelius",
+  "email": `}<span className="demo-masked">"m*****@*******.com"</span>{`,
+  "client_ip": `}<span className="demo-masked">"sha256(198.51.100)"</span>{`,
+  "api_key": `}<span className="demo-masked">"[REDACTADO]"</span>{`
+}`}
+                </div>
+              </div>
             </div>
             
+            {/* Right Column: Tabbed intake panel */}
             <UploadBox onFileLoaded={handleFileLoaded} />
-            
-            <div className="stats-grid" style={{ marginTop: '0.5rem' }}>
-              <div className="stat-card" style={{ alignItems: 'center', textAlign: 'center' }}>
-                <ShieldCheck size={24} className="text-success" style={{ marginBottom: '0.25rem' }} />
-                <span className="stat-label" style={{ fontSize: '0.75rem' }}>Total Privacidad</span>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Ningún byte sale de tu computadora</span>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="step-container rules-container">
+            <div className="rules-intro-card">
+              <div className="rules-intro-text">
+                <h2>Define las reglas de enmascaramiento</h2>
+                <p>Personaliza cómo tratar cada tipo de información sensible encontrada en <code>{fileName}</code>.</p>
               </div>
-              <div className="stat-card" style={{ alignItems: 'center', textAlign: 'center' }}>
-                <SparklesIcon size={24} className="text-success" style={{ marginBottom: '0.25rem' }} />
-                <span className="stat-label" style={{ fontSize: '0.75rem' }}>Falsificación Coherente</span>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Mantiene la coherencia de datos para pruebas</span>
-              </div>
-              <div className="stat-card" style={{ alignItems: 'center', textAlign: 'center' }}>
-                <AlertTriangle size={24} className="text-success" style={{ marginBottom: '0.25rem' }} />
-                <span className="stat-label" style={{ fontSize: '0.75rem' }}>Detección de Claves</span>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Heurística de claves para hashes y secretos</span>
-              </div>
+              <span className="brand-badge" style={{ color: 'var(--color-primary)' }}>
+                {totalDetections} {totalDetections === 1 ? 'detección' : 'detecciones'}
+              </span>
             </div>
-          </>
-        ) : (
-          <>
+
+            <RulesPanel
+              counts={counts}
+              rules={rules}
+              onChangeRule={handleChangeRule}
+            />
+
+            <div className="wizard-footer">
+              <button type="button" className="btn-secondary" onClick={handleClear}>
+                <ArrowLeft size={16} />
+                Subir otro archivo
+              </button>
+              
+              <button type="button" className="btn-primary" onClick={() => setStep(3)}>
+                Continuar a verificación
+                <ArrowRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="step-container workspace-layout">
             <StatsHeader
               fileName={fileName}
               fileSize={fileSize}
@@ -229,58 +332,39 @@ export default function App() {
               copySuccess={copySuccess}
             />
 
-            <div className="workspace-layout">
-              <RulesPanel
-                counts={counts}
-                rules={rules}
-                onChangeRule={handleChangeRule}
-              />
+            <DiffViewer
+              fileName={fileName}
+              originalText={fileContent}
+              findings={findings}
+              rules={rules}
+            />
 
-              <DiffViewer
-                fileName={fileName}
-                originalText={fileContent}
-                findings={findings}
-                rules={rules}
-              />
+            <div className="wizard-footer">
+              <button type="button" className="btn-secondary" onClick={() => setStep(2)}>
+                <ArrowLeft size={16} />
+                Ajustar Reglas
+              </button>
+              
+              <button type="button" className="btn-success" onClick={handleClear}>
+                <RefreshCw size={16} />
+                Comenzar de nuevo
+              </button>
             </div>
-          </>
+          </div>
         )}
       </main>
 
       {/* Footer */}
       <footer className="app-footer">
         <div>
-          AnonData es una herramienta digital de código abierto creada para la privacidad de datos.
+          AnonData — Utilidad local-first de código abierto.
         </div>
         <div className="footer-links">
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-            Hecho con <Heart size={12} style={{ color: 'oklch(62% 0.18 20)', fill: 'oklch(62% 0.18 20)' }} /> para desarrolladores
+            Hecho con <Heart size={11} style={{ color: 'var(--color-danger)', fill: 'var(--color-danger)' }} /> para desarrolladores
           </span>
         </div>
       </footer>
     </div>
-  );
-}
-
-// Inline Sparkles icon fallback since lucide-react name is different or missing sometimes
-function SparklesIcon({ size = 16, className = '', style = {} }: { size?: number; className?: string; style?: React.CSSProperties }) {
-  return (
-    <svg 
-      xmlns="http://www.w3.org/2000/svg" 
-      width={size} 
-      height={size} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className={className}
-      style={style}
-    >
-      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
-      <path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5.5z"/>
-      <path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1z"/>
-    </svg>
   );
 }

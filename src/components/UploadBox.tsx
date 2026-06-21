@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Sparkles } from 'lucide-react';
+import { Upload, Sparkles, Clipboard } from 'lucide-react';
 
 interface UploadBoxProps {
   onFileLoaded: (name: string, content: string, type: 'json' | 'csv' | 'txt') => void;
@@ -30,7 +30,9 @@ const SAMPLE_LOG = `{
 }`;
 
 export const UploadBox: React.FC<UploadBoxProps> = ({ onFileLoaded }) => {
+  const [activeTab, setActiveTab] = useState<'upload' | 'paste'>('upload');
   const [dragActive, setDragActive] = useState(false);
+  const [pasteText, setPasteText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDrag = (e: React.DragEvent) => {
@@ -83,41 +85,125 @@ export const UploadBox: React.FC<UploadBoxProps> = ({ onFileLoaded }) => {
     onFileLoaded('sample_transactions.json', SAMPLE_LOG, 'json');
   };
 
+  const handlePasteSubmit = () => {
+    if (!pasteText.trim()) return;
+    
+    const trimmed = pasteText.trim();
+    let type: 'json' | 'csv' | 'txt' = 'txt';
+    
+    if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+      type = 'json';
+    } else if (trimmed.includes(',') && trimmed.includes('\n')) {
+      type = 'csv';
+    }
+    
+    onFileLoaded('pasted_content.' + (type === 'json' ? 'json' : type === 'csv' ? 'csv' : 'txt'), pasteText, type);
+  };
+
   return (
-    <div 
-      className={`upload-container ${dragActive ? 'drag-active' : ''}`}
-      onDragEnter={handleDrag}
-      onDragOver={handleDrag}
-      onDragLeave={handleDrag}
-      onDrop={handleDrop}
-      onClick={triggerFileInput}
-    >
-      <input 
-        ref={fileInputRef}
-        type="file"
-        style={{ display: 'none' }}
-        accept=".json,.csv,.txt"
-        onChange={handleFileInput}
-      />
-      
-      <div className="upload-icon">
-        <Upload size={48} />
-      </div>
-      
-      <div className="upload-text-group">
-        <h3 className="upload-title">Arrastra y suelta tu archivo aquí</h3>
-        <p className="upload-subtitle">Formatos soportados: JSON, CSV, TXT (Logs)</p>
-      </div>
+    <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+      {/* Tab Selector */}
+      <nav className="tab-nav">
+        <button 
+          type="button" 
+          className={`tab-btn ${activeTab === 'upload' ? 'active' : ''}`}
+          onClick={() => setActiveTab('upload')}
+        >
+          Subir Archivo
+        </button>
+        <button 
+          type="button" 
+          className={`tab-btn ${activeTab === 'paste' ? 'active' : ''}`}
+          onClick={() => setActiveTab('paste')}
+        >
+          Pegar Texto
+        </button>
+      </nav>
 
-      <div className="upload-or">ó</div>
-      
-      <button type="button" className="btn-sample" onClick={loadSample}>
-        <Sparkles size={16} className="text-success" />
-        Cargar datos de ejemplo
-      </button>
+      {/* Tab 1: File Upload */}
+      {activeTab === 'upload' && (
+        <div 
+          className={`upload-container ${dragActive ? 'drag-active' : ''}`}
+          onDragEnter={handleDrag}
+          onDragOver={handleDrag}
+          onDragLeave={handleDrag}
+          onDrop={handleDrop}
+          onClick={triggerFileInput}
+        >
+          <input 
+            ref={fileInputRef}
+            type="file"
+            style={{ display: 'none' }}
+            accept=".json,.csv,.txt"
+            onChange={handleFileInput}
+          />
+          
+          <div className="upload-icon">
+            <Upload size={32} />
+          </div>
+          
+          <div className="upload-text-group">
+            <h3 className="upload-title">Arrastra y suelta tu archivo aquí</h3>
+            <p className="upload-subtitle">Formatos: JSON, CSV, TXT (Logs)</p>
+          </div>
 
-      <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.5rem' }}>
-        🔒 Todos los datos se procesan 100% de manera local. Nada se envía a servidores.
+          <button type="button" className="btn-secondary" style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}>
+            Seleccionar archivo
+          </button>
+        </div>
+      )}
+
+      {/* Tab 2: Paste Text */}
+      {activeTab === 'paste' && (
+        <div className="paste-container">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+            <label htmlFor="raw-log-input" className="paste-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              Introduce tus datos
+            </label>
+            <button 
+              type="button" 
+              className="btn-sample" 
+              style={{ 
+                padding: '0.25rem 0.5rem', 
+                fontSize: '0.75rem', 
+                border: '1px solid var(--border-subtle)', 
+                background: 'var(--bg-card)', 
+                cursor: 'pointer', 
+                borderRadius: '4px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '0.25rem', 
+                color: 'var(--text-muted)' 
+              }} 
+              onClick={loadSample}
+            >
+              <Sparkles size={12} style={{ color: 'var(--color-primary)' }} />
+              Cargar Ejemplo
+            </button>
+          </div>
+          <textarea
+            id="raw-log-input"
+            className="paste-textarea"
+            placeholder="Pega aquí tus logs, JSON estructurado, o listados CSV para sanitizar..."
+            value={pasteText}
+            onChange={(e) => setPasteText(e.target.value)}
+          />
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+            <button 
+              type="button" 
+              className={`btn-primary ${!pasteText.trim() ? 'btn-disabled' : ''}`}
+              onClick={handlePasteSubmit}
+              style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
+            >
+              <Clipboard size={14} />
+              Escanear Datos
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ fontSize: '0.7rem', color: 'var(--text-dim)', marginTop: '1.25rem', textAlign: 'center' }}>
+        🔒 Todos los datos se procesan 100% de manera local. Nada se envía a servidores externos.
       </div>
     </div>
   );

@@ -154,15 +154,15 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
 
   return (
     <div className="glass-panel editor-container">
-      <div className="editor-toolbar">
+      <div className="editor-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <FileCode size={18} className="text-success" />
-          <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>Estudio de Datos: {fileName}</span>
+          <FileCode size={18} style={{ color: 'var(--color-primary)' }} />
+          <span className="editor-title">Estudio de Comparación: <code>{fileName}</code></span>
         </div>
         {isTruncated && (
-          <div style={{ fontSize: '0.75rem', color: 'oklch(74% 0.15 45)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--color-danger)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
             <HelpCircle size={14} />
-            Previsualización limitada por rendimiento (~35KB). La descarga final procesará todo el archivo.
+            Previsualización limitada por rendimiento (~35KB).
           </div>
         )}
       </div>
@@ -171,7 +171,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
         <div className="pane">
           <div className="pane-header">
             <span>Datos Originales</span>
-            <span className="badge local">Original</span>
+            <span className="brand-badge" style={{ textTransform: 'none' }}>Original</span>
           </div>
           <div className="pane-content" ref={leftPaneRef}>
             {renderOriginalHighlighted()}
@@ -180,8 +180,8 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({
 
         <div className="pane">
           <div className="pane-header">
-            <span>Datos Anónimos</span>
-            <span className="badge local" style={{ color: 'var(--color-primary)', borderColor: 'var(--color-primary)' }}>Masked</span>
+            <span>Datos Anónimizados</span>
+            <span className="brand-badge" style={{ color: 'var(--color-success)', borderColor: 'var(--color-success)', textTransform: 'none' }}>Sanitizado</span>
           </div>
           <div className="pane-content" ref={rightPaneRef}>
             {renderMaskedHighlighted()}
