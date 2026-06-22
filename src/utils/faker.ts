@@ -121,8 +121,8 @@ export function getFakeValue(category: string, original: string): string {
   switch (category) {
     case 'email': {
       const name = MOCK_NAMES[hash % MOCK_NAMES.length].toLowerCase();
-      const surname = MOCK_SURNAMES[(hash >> 2) % MOCK_SURNAMES.length].toLowerCase();
-      const domain = MOCK_DOMAINS[(hash >> 4) % MOCK_DOMAINS.length];
+      const surname = MOCK_SURNAMES[(hash >>> 2) % MOCK_SURNAMES.length].toLowerCase();
+      const domain = MOCK_DOMAINS[(hash >>> 4) % MOCK_DOMAINS.length];
       const number = hash % 100 ? `.${hash % 100}` : '';
       return `${name}${number}_${surname}@${domain}`;
     }
@@ -131,8 +131,8 @@ export function getFakeValue(category: string, original: string): string {
       // Local IP or non-routable class
       const octet1 = [10, 172, 192, 8][hash % 4];
       const octet2 = octet1 === 192 ? 168 : octet1 === 172 ? (16 + (hash % 16)) : (hash % 256);
-      const octet3 = (hash >> 3) % 256;
-      const octet4 = (hash >> 6) % 254 + 1;
+      const octet3 = (hash >>> 3) % 256;
+      const octet4 = (hash >>> 6) % 254 + 1;
       return `${octet1}.${octet2}.${octet3}.${octet4}`;
     }
     
@@ -145,7 +145,7 @@ export function getFakeValue(category: string, original: string): string {
       // Seed remaining digits (leaving last 4 for actual visible representation or random)
       const contentDigitsCount = length - digits.length - 4;
       for (let i = 0; i < contentDigitsCount; i++) {
-        digits += ((hash >> i) % 10).toString();
+        digits += ((hash >>> i) % 10).toString();
       }
       
       // Append a fixed suffix
@@ -161,9 +161,9 @@ export function getFakeValue(category: string, original: string): string {
     case 'uuid': {
       // Consistent UUID
       const p1 = (hash & 0xfffffff).toString(16).padStart(8, '0');
-      const p2 = ((hash >> 4) & 0xffff).toString(16).padStart(4, '0');
-      const p3 = ((hash >> 8) & 0x0fff | 0x4000).toString(16).padStart(4, '0'); // v4 uuid
-      const p4 = ((hash >> 12) & 0x3fff | 0x8000).toString(16).padStart(4, '0');
+      const p2 = ((hash >>> 4) & 0xffff).toString(16).padStart(4, '0');
+      const p3 = ((hash >>> 8) & 0x0fff | 0x4000).toString(16).padStart(4, '0'); // v4 uuid
+      const p4 = ((hash >>> 12) & 0x3fff | 0x8000).toString(16).padStart(4, '0');
       const p5 = sha256Sync(original).slice(0, 12);
       return `${p1}-${p2}-${p3}-${p4}-${p5}`;
     }
@@ -188,8 +188,8 @@ export function getFakeValue(category: string, original: string): string {
     
     case 'phone': {
       const area = (200 + (hash % 800)).toString();
-      const prefix = (100 + ((hash >> 2) % 900)).toString();
-      const line = (1000 + ((hash >> 4) % 9000)).toString();
+      const prefix = (100 + ((hash >>> 2) % 900)).toString();
+      const line = (1000 + ((hash >>> 4) % 9000)).toString();
       return `+1 (${area}) ${prefix}-${line}`;
     }
     

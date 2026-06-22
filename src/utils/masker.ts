@@ -1,5 +1,5 @@
-import { type DetectedEntity, type PIICategory, isSecretKey, scanRawText } from './detector';
-import { getFakeValue, getRedactedPlaceholder, sha256Sync } from './faker';
+import { type DetectedEntity, type PIICategory, isSecretKey, scanRawText } from './detector.js';
+import { getFakeValue, getRedactedPlaceholder, sha256Sync } from './faker.js';
 import Papa from 'papaparse';
 
 /**

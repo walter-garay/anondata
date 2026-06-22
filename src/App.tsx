@@ -6,8 +6,13 @@ import { DiffViewer } from './components/DiffViewer';
 import { StatsHeader } from './components/StatsHeader';
 import { type PIICategory, scanRawText, isSecretKey, PII_RULES } from './utils/detector';
 import { anonymizeFile } from './utils/masker';
+import { ApiDocs } from './components/ApiDocs';
+import { AdminDashboard } from './components/AdminDashboard';
 
 export default function App() {
+  // View mode: 'app' (masking tool), 'admin' (admin dashboard), 'docs' (API documentation)
+  const [viewMode, setViewMode] = useState<'app' | 'admin' | 'docs'>('app');
+
   // Wizard steps: 1 = Intake / Upload, 2 = Configure Rules, 3 = Verify & Export
   const [step, setStep] = useState<number>(1);
 
@@ -61,6 +66,33 @@ export default function App() {
   });
 
   const [copySuccess, setCopySuccess] = useState<boolean>(false);
+
+  // Send anonymous stats of web usage to server database
+  const logMetadataToServer = () => {
+    if (fileContent.length === 0 || !fileType) return;
+
+    const totalDetections = Object.values(counts).reduce((a, b) => a + b, 0);
+
+    fetch('/api/log', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        char_count: fileContent.length,
+        detections_count: totalDetections,
+        file_type: fileType,
+        categories_stats: counts
+      })
+    }).catch((err) => {
+      console.error('Failed to log metadata to server:', err);
+    });
+  };
+
+  const handleGoToVerification = () => {
+    setStep(3);
+    logMetadataToServer();
+  };
 
   // Parse file and load findings
   const handleFileLoaded = (name: string, content: string, type: 'json' | 'csv' | 'txt') => {
@@ -197,6 +229,14 @@ export default function App() {
 
   const totalDetections = Object.values(counts).reduce((a, b) => a + b, 0);
 
+  if (viewMode === 'docs') {
+    return <ApiDocs onBack={() => setViewMode('app')} />;
+  }
+
+  if (viewMode === 'admin') {
+    return <AdminDashboard onBack={() => setViewMode('app')} />;
+  }
+
   return (
     <div className="app-container">
       {/* App Header */}
@@ -207,9 +247,21 @@ export default function App() {
           <span className="brand-badge">Local-First</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ display: 'none', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--text-dim)' }}>
-            <Lock size={12} style={{ color: 'var(--color-success)' }} />
-            <span>Procesamiento local</span>
+          <div className="header-nav-links">
+            <button
+              type="button"
+              className="header-nav-btn"
+              onClick={() => setViewMode('docs')}
+            >
+              API Docs
+            </button>
+            <button
+              type="button"
+              className="header-nav-btn"
+              onClick={() => setViewMode('admin')}
+            >
+              Admin Panel
+            </button>
           </div>
           {/* Theme Toggle Button */}
           <button 
@@ -310,7 +362,7 @@ export default function App() {
                 Subir otro archivo
               </button>
               
-              <button type="button" className="btn-primary" onClick={() => setStep(3)}>
+              <button type="button" className="btn-primary" onClick={handleGoToVerification}>
                 Continuar a verificación
                 <ArrowRight size={16} />
               </button>
@@ -358,6 +410,10 @@ export default function App() {
       <footer className="app-footer">
         <div>
           AnonData — Utilidad local-first de código abierto.
+          <span className="footer-nav-divider">
+            • <button type="button" className="footer-btn-link" onClick={() => setViewMode('docs')}>API Docs</button>
+            • <button type="button" className="footer-btn-link" onClick={() => setViewMode('admin')}>Admin Panel</button>
+          </span>
         </div>
         <div className="footer-links">
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
