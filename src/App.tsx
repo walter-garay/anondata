@@ -265,7 +265,7 @@ export default function App() {
               className="header-nav-btn"
               onClick={() => setViewMode('admin')}
             >
-              Admin Panel
+              Login
             </button>
           </div>
           {/* Theme Toggle Button */}
@@ -417,7 +417,7 @@ export default function App() {
           AnonData — Utilidad local-first de código abierto.
           <span className="footer-nav-divider">
             • <button type="button" className="footer-btn-link" onClick={() => setViewMode('docs')}>API Docs</button>
-            • <button type="button" className="footer-btn-link" onClick={() => setViewMode('admin')}>Admin Panel</button>
+            • <button type="button" className="footer-btn-link" onClick={() => setViewMode('admin')}>Login</button>
           </span>
         </div>
         <div className="footer-links">
