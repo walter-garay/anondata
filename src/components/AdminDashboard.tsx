@@ -60,7 +60,12 @@ export function AdminDashboard({ onBack }: AdminDashboardProps) {
     setLoading(true);
     setAuthError('');
     try {
-      const response = await fetch('/api/stats', {
+      const apiBase = window.location.hostname.endsWith('github.io') || 
+                       (window.location.hostname === 'localhost' && window.location.port === '5173')
+        ? 'https://anondata.vercel.app'
+        : '';
+
+      const response = await fetch(`${apiBase}/api/stats`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${pw}`,

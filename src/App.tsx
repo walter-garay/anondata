@@ -73,7 +73,12 @@ export default function App() {
 
     const totalDetections = Object.values(counts).reduce((a, b) => a + b, 0);
 
-    fetch('/api/log', {
+    const apiBase = window.location.hostname.endsWith('github.io') || 
+                     (window.location.hostname === 'localhost' && window.location.port === '5173')
+      ? 'https://anondata.vercel.app'
+      : '';
+
+    fetch(`${apiBase}/api/log`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
